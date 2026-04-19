@@ -121,15 +121,19 @@ const ResumeBuilder = () => {
   const downloadResume = () => {
     const preview = document.getElementById('resume-preview');
 
-    // collect all styles from current page
     const styles = Array.from(document.styleSheets).map(sheet => {
       try {
         return Array.from(sheet.cssRules).map(rule => rule.cssText).join('');
       } catch { return ''; }
     }).join('');
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:none;opacity:0;pointer-events:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
       <!DOCTYPE html>
       <html>
         <head>
@@ -138,18 +142,19 @@ const ResumeBuilder = () => {
           <style>${styles}</style>
           <style>
             @page { size: A4; margin: 0; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             body { margin: 0; padding: 0; }
           </style>
         </head>
         <body>${preview.innerHTML}</body>
       </html>
     `);
-    printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
+    doc.close();
+
+    iframe.onload = () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 1000);
     };
   }
 
